@@ -1,13 +1,13 @@
 # FLOP Devnet（builder）つまずき早見表（非公式）
 
 > - **非公式のメモ。** FLOP Labs の公式ではない。VNL Works の非公式のメモ（筆者＝VNL Works、GitHub は vanilla3）。
-> - **最終確認 2026-11-05 00:27Z**（flop-labs/network の Issue を取得した時刻）。下の状態の行（直った・直っていない・報告がない）は、この時点のもの。
+> - **最終確認 2026-11-06 15:41Z**（flop-labs/network の Issue を取得した時刻）。下の状態の行（直った・直っていない・報告がない）は、この時点のもの。
 > - 最終確認から 7 日以上たっていたら、状態の行は古いとみなし、公式 docs と flop-labs/network を見てほしい。
 > - 公式かどうかの確かめ先：https://docs.flop.network/docs/official-links
 > - 対象：`@flop-labs/cli` 0.4.0 で Devnet を builder（agent）として試すとき。validator・miner は扱わない。
-> - 出典：flop-labs/network の Issue とコメント（2026-11-05 00:27Z の取得）。ほとんどは**参加者の報告**で、筆者は確かめていない。「（試した）」は、筆者が自分の端末で見たもの（試した：2026-11-04〜11-05）。
+> - 出典：flop-labs/network の Issue とコメント（2026-11-06 15:41Z の取得）。ほとんどは**参加者の報告**で、筆者は確かめていない。「（試した）」は、筆者が自分の端末で見たもの（試した：2026-11-04〜11-06）。鍵ファイルの形は、CLI 0.4.0 の公開ソースを読んで書いた（ソースのコードは動かしていない）。
 > - 時刻はすべて UTC（末尾の `Z`）。
-> - 2026-11-05 00:27Z の時点で、下の Issue はすべて open で、保守担当者の返事はどれにもない（network 全体で保守担当者の返事は #11 の1件だけ。#1 には「新しい Issue には 3 営業日以内に最初の返事」とある）。
+> - 2026-11-06 15:41Z の時点で、下の表の Issue はすべて open。network 全体で保守担当者の返事は 2 件（#11 と、#15 を #10 の重複として閉じた 11/05 15:06Z のもの）。下の Issue には返事はない（#1 には「新しい Issue には 3 営業日以内に最初の返事」とある）。
 > - 正本は公式 docs（docs.flop.network）と flop-labs/network。この表は遅れることがある。docs の testnet-and-timeline の FAQ は「agent は Devnet を使えない」と書いているが、同じページの別の箇所や CLI は使える前提で書かれている（この食い違いは network#52）。
 > - Devnet は報酬がなく、使い捨て（公式 official-links・testnet-and-timeline）。FLOP が claim・mint・登録のためにシードフレーズや入金を求めることはない（official-links）。
 
@@ -24,10 +24,17 @@
 2. **アドレスや wallet を作り直さない。** 新しいアドレスを作っても同じところで止まった例がある（#43）。agent wallet は owner ごとに 10 個までで、止めても（`deactivate_wallet`）数は減らない（#48）。
 3. **時計を合わせてから始める**（#34）。
 4. **`/health` が ok でも通るとは限らない。** faucet の `readinessScope` は「dependencies for this client; grant eligibility checked on request」で、請求できるかは請求したときに決まる（#51・#22）。
-5. **allowance は約 24 時間で切れ、更新の手順は公開されていない**（#6・#31）。credential を取ると時計が動き出す。推論が 429（channel pool is full）で断られ続けたまま期限が切れた報告がある（#6・#31）。取ったら間を空けて試し、連打はしない。
+5. **allowance は約 24 時間で切れ、更新の手順は公開されていない**（#6・#31）。参加者の報告では、gateway が公開している OpenAPI に、期限が切れた allowance は登録し直しても更新されない、とある（#6 の 11/05 04:40Z のコメント、#85）。credential を取ると時計が動き出す。推論が 429（channel pool is full）で断られ続けたまま期限が切れた報告がある（#6・#31）。取ったら間を空けて試し、連打はしない。
 
 ## 秘密のファイル（人に見せない・貼らない・消さない）
 - `~/.flop/devnet-enroll-wallet.json`：`agent credential` が作る鍵ファイル（できるのは試した）。`--keystore` を渡してもこのファイルが使われる、という報告がある（#22・#34）。**秘密鍵。**
+  - 形（CLI 0.4.0 の公開ソース、npm の `@flop-labs/cli@0.4.0` の `dist/cli.js` による）：`type`・`address`・`mnemonic` を持つ JSON で、**mnemonic（復元用の単語の並び）が平文で入る**（L6545〜6565、L6563）。faucet を呼ぶ前に作られるので、登録が失敗しても残る（ファイルの用意が L6590、faucet への請求が L6593）。
+  - CLI は Windows では、このファイルが持ち主だけのものかを確かめない（L6455 の `ownerOnly` が win32 で常に真）。実際に誰が読めるかは Windows のアカウントのフォルダの権限の設定しだいで、筆者は確かめていない。
+  - 筆者はソースを読んだだけで、このファイルは開いていない。
+  - 注意：開かない・貼らない・人に見せない。その mnemonic をほかの wallet や本物の資産に使わない。クラウドの同期やバックアップの共有先に置かない。消さない。
+  - 消してはいけない理由：ファイルがないと、CLI は次の実行で新しい wallet を作る（L6558〜6564）。前の wallet の FLOP は、消したファイルの mnemonic がないと使えなくなる。
+  - `keys inspect` にこのファイルを渡すと `invalid Polkadot JSON keystore`（`INVALID_INPUT`）で拒まれる（試した。筆者が #121 に出した）。help の範囲では、このファイルの wallet のアドレスを CLI で知る手段がない（#121）。
+  - アドレスを知るためにファイルを開くことは勧めない。
 - `~/.flop/devnet-wallet-agent-key.json`：bearer キーのキャッシュ（#34 の報告）。
 - `agent credential --print-key` は bearer キーを画面に出すので使わない。
 
@@ -39,12 +46,12 @@
 
 | エラーの文（英語の原文） | どこで | 原因（network#N） | どうする |
 |---|---|---|---|
-| `The operation was aborted due to timeout`（ブラウザや `/fund` を直に呼ぶと HTTP `524` のことも、#37・#66） | `faucet request`（`FAUCET_REQUEST_FAILED`・`retryable: true`）、`agent credential`（`COMMAND_FAILED`・`retryable: false`、試した） | 応答が返らなくても、付与は通っていることがある。数分〜20 分ほどで届いた例（#22、時刻は推定を含む）と、そのあと次の行の Grant pending のまま届かない例（#43 の 3 人）がある | すぐ流し直さない。15 分ほど待つ。`faucet request` なら先に `balance` で残高を見る |
-| `Grant pending; retry the original request later`（HTTP 503、`reason: "grant_pending"`、`retryAfterSeconds: 60`）。`agent credential` では `devnet faucet returned HTTP 503: Grant pending; retry the original request later`（試した） | `agent credential`（試した、11/04 に 2 回。その前の 1 回はタイムアウト）、`/fund` を直に呼ぶとき、公式の Quick fund の画面 | 付与が「処理中」で止まる。11/03 には、このあと付与が届いた・credential が通った報告がある（#22）。11/04 にも、06:39Z より前に届いた報告が 1 件ある（#37、時刻は書かれていない）。一方、11/04 の 06:05Z ごろ以降に pending になった分（#43 の 3 人。ほかに、最初の請求がタイムアウトして結果が分からないまま止めた人が #43 に 1 人。ほかに #10、#66 の 2 回目の請求）は、**11/05 00:27Z の時点で解けたという報告がない**。#43 の最初の報告は 11/03 の夜 | 待つ。同じ wallet・アドレスのまま、間を空けて 1 回ずつ |
+| `The operation was aborted due to timeout`（ブラウザや `/fund` を直に呼ぶと HTTP `524` のことも、#37・#66） | `faucet request`（`FAUCET_REQUEST_FAILED`・`retryable: true`）、`agent credential`（`COMMAND_FAILED`・`retryable: false`、試した） | 応答が返らなくても、付与は通っていることがある。数分〜20 分ほどで届いた例（#22、時刻は推定を含む）と、そのあと次の行の Grant pending で止まった例（#43。届くまでの時間と、届かない報告は次の行）がある | すぐ流し直さない。15 分ほど待つ。`faucet request` なら先に `balance` で残高を見る。`agent credential` では、help の範囲ではその wallet のアドレスを CLI で知る手段がなく、残高を見られない（#121、試した） |
+| `Grant pending; retry the original request later`（HTTP 503、`reason: "grant_pending"`、`retryAfterSeconds: 60`）。`agent credential` では `devnet faucet returned HTTP 503: Grant pending; retry the original request later`（試した） | `agent credential`（試した、11/04 に 2 回。その前の 1 回はタイムアウト）、`/fund` を直に呼ぶとき、公式の Quick fund の画面 | 付与が「処理中」で止まる。11/03 には、このあと付与が届いた・credential が通った報告がある（#22）。11/04 にも、06:39Z より前に届いた報告が 1 件ある（#37、時刻は書かれていない）。一方、11/04 の 06:05Z ごろ以降に pending になった分（#43 の 3 人。ほかに、最初の請求がタイムアウトして結果が分からないまま止めた人が #43 に 1 人。ほかに #10、#66 の 2 回目の請求）について、参加者の測定では、#43 に出ていた 5 つのアドレス（最初の報告の分とタイムアウトの人の分を含む）のうち 2 つには 5〜6 時間後に 25 FLOP が届いていた（#43 の 11/05 08:44Z のコメント）。残りは届いていないという報告がある（#43 の 11/05 13:34Z のコメント。#66 の 2 回目の請求も、11/05 00:30Z のコメントでは届いていない）。新しく請求したら届いた、という報告もある（#43 の 11/06 11:58Z のコメント。請求した時刻は書かれていない）。#43 の最初の報告は 11/03 の夜 | 待つ。同じ wallet・アドレスのまま、間を空けて 1 回ずつ |
 | `Address funded recently; retry in N min` | `faucet request` | そのアドレスは 24 時間以内に付与を受けている。タイムアウトした最初の請求が実は通っていた例（#22） | `balance` で残高を見る。届いていれば先へ。届いていなければ表示の分だけ待つ |
 | `Indexer stale or missing chain progress; retry later`（503） | `faucet request`・`agent credential` | explorer の indexer の遅れ（#8）。参加者の報告では 11/03 に追いついた | 待つ。faucet 0.1.256 からは faucet の `/health` の `dependencies.indexer`（`lagBlocks`）でも遅れが見える（#8） |
 | `IP classification unavailable; retry later`（503） | `faucet request`（quick fund。verified の経路でも出た例あり） | faucet が IP の判定をできていない。依存先が落ちているという見方は参加者の推論（#22）。faucet 0.1.245 までは `/health` が ok のまま出ていた。11/04 以降にこの文で断られたという報告はない | 待つ |
-| `Faucet daily cap reached; try again later`（429、`reason: "daily_cap"`） | `faucet request` | faucet の 1 日の上限（#51・#8）。上限に届く前に断られた例もある（#51）。11/04 04:39Z ごろ再開したという報告のあとも、断られた人がいる（#59） | 待つ（区切りの時刻は公開されていない） |
+| `Faucet daily cap reached; try again later`（429、`reason: "daily_cap"`） | `faucet request` | faucet の 1 日の上限（#51・#8）。上限に届く前に断られた例もある（#51）。11/04 04:39Z ごろ再開したという報告のあとも、断られた人がいる（#59）。#51 の参加者の測定では、11/05 07:24Z〜14:09Z に付与が止まり、`dailyCapFlop` は 13:32Z の読みの 100 万から 14:10Z の読みでは 1,000 万になっていた（11/05 14:12Z のコメント）。上限の値は変わることがある | 待つ（区切りの時刻は公開されていない） |
 | `Identity requested recently; retry in 1440 min`（429）、`Humanity proof failed (brightid): not configured`・`Humanity proof failed (passport): personhood provider not configured`（403） | faucet の verified の経路 | 設定されていない経路や、本人確認は通ったのに付与が来なかった経路でも、24 時間のクールダウンが始まる（#21・#46）。クールダウンはアドレスと経路ごと（#21） | この経路は使わず、CLI の quick fund（`faucet request`）を使う |
 | `400 Unknown faucet tier` | faucet の `/fund` を直に呼ぶとき | `{"tier":"quick"}` を付けた。quick fund は tier を付けない（#22） | tier を付けない。ふつうは CLI の `faucet request` を使う |
 
@@ -54,7 +61,7 @@
 |---|---|---|---|
 | `devnet gateway returned an invalid enrollment challenge`（`INVALID_INPUT`） | `agent credential` | 手元の時計が gateway より遅れていると、CLI が challenge を自分で拒む（#34）。報告の例は 147 ms・0.6 秒（#28）・5.5 秒（Windows Time サービスが止まっていた、#34）。Windows Time が動いて同期している端末で（設定は変えていない）、`w32tm /resync /force` の後も time.windows.com より約 0.19 秒遅く、通らなかった（試した。筆者が #34 にコメント） | 観測：同期と resync では縮まらなかった（試した）。推し：1 回の同期や、止まっている Windows Time を動かすのはよい（#34 の本文は macOS で同期すれば直るはずとし、#34 のコメントには Windows Time が止まっていた例がある）。同期のしくみの設定（間隔・時刻源など）を変えることは、この表では試していないので扱わない。手で署名する回避策は勧めない。CLI の修正を待つ（#34） |
 | `Wallet enrollment is temporarily unavailable.`（503 `wallet_enrollment_unavailable`） | `agent credential`（faucet の後、gateway に登録する段） | 登録そのものが止まっている（#28。下の上限とは別のエラー） | 待つ |
-| `The daily wallet enrollment cap is reached; retry later.`（503 `wallet_enrollment_cap_reached`） | 同上 | gateway の登録の 1 日の上限と読まれている（参加者の推論、#28）。11/04 は 01:50Z ごろから 08:10Z まで断られた報告がある（#28、ほかに #66）一方、05:02Z に通った人もいる（#31）。`Retry-After` なし | 待つ（区切りの時刻は公開されていない） |
+| `The daily wallet enrollment cap is reached; retry later.`（503 `wallet_enrollment_cap_reached`） | 同上 | gateway の登録の 1 日の上限と読まれている（参加者の推論、#28）。11/04 は 01:50Z ごろから 08:10Z まで断られた報告がある（#28、ほかに #66）一方、05:02Z に通った人もいる（#31）。#66 にも、11/04 04:00Z の 503 の後、05:00Z に同じ wallet で通ったという報告がある（11/05 22:50Z のコメント）。`Retry-After` なし | 待つ（区切りの時刻は公開されていない） |
 | `403 wallet_unfunded` | 同上 | 登録する wallet に残高がない（#59、1 人の報告） | faucet の付与が届くのを待つ |
 
 ### 推論（`/v1/chat/completions`）
@@ -62,8 +69,8 @@
 | エラーの文（英語の原文） | どこで | 原因（network#N） | どうする |
 |---|---|---|---|
 | `402 payment_required` | キーなしの `/v1/chat/completions` | 想定どおり。チャットにはキーが要る（公式 sdk-references「Model discovery needs no key; chat completions do.」） | 先に credential を取る。モデルの一覧（`GET /v1/models`）はキーなしで読める |
-| `BrokerOverloadedError: gateway channel pool is full`（429、`code: "overloaded"`） | `/v1/chat/completions` | gateway の channel が埋まっている（#31・#6）。11/03 は `Retry-After: 1` が付いたが、11/04 の報告（1 人）では付かず、`type` も `server_error` に変わった（#31）。11/03 19:42Z ごろ一部のキーで通った例のあと、通ったという報告はない。11/04 18:40Z まで断られ続けた報告と、断られたまま 15:06Z に期限が切れた報告（21:50Z に投稿）がある（#31）。**11/05 00:27Z の時点で直ったという報告はない**。429 では残高・quota は減らなかったという報告（#31・#6） | 連打しない。間を空けて待つ |
-| `401 api_key_expired`、`devnet_enrollment_expired — This devnet allowance expired.`、CLI では `devnet allowance expired; ask the operator to renew it` | `/v1/keys/me`・チャット・`agent credential` | allowance の期限切れ（発行から約 24 時間、#31）。`agent credential` を流し直しても更新されない（#6・#31） | 更新の手順は公開されていない（#6 で頼んでいる人がいるが返事はない）。wallet を作り直して取り直そうとしない |
+| `BrokerOverloadedError: gateway channel pool is full`（429、`code: "overloaded"`） | `/v1/chat/completions` | gateway の channel が埋まっている（#31・#6）。11/03 は `Retry-After: 1` が付いたが、11/04 の報告（1 人）では付かず、`type` も `server_error` に変わった（#31）。同じ 11/04 に `Retry-After: 1` が付いたままだった、という別の人の報告もある（#31 の 11/06 01:50Z のコメント）。11/03 19:42Z ごろ一部のキーで通った例がある。11/05 13:46Z に通って receipt が `settled` になった、という参加者の報告が 1 件ある（#31。同じ人が #52 にも書いた）。同じ人は 20:44Z にまた 429 になった。11/04 18:40Z まで断られ続けた報告と、断られたまま 15:06Z に期限が切れた報告（21:50Z に投稿）がある（#31）。11/05〜11/06 も 429・503 が続く報告がある（#31・#97・#113）。**2026-11-06 15:41Z の時点で直ったという報告はない**。429 では残高・quota は減らなかったという報告（#31・#6） | 連打しない。間を空けて待つ |
+| `401 api_key_expired`、`devnet_enrollment_expired — This devnet allowance expired.`、CLI では `devnet allowance expired; ask the operator to renew it` | `/v1/keys/me`・チャット・`agent credential` | allowance の期限切れ（発行から約 24 時間、#31）。`agent credential` を流し直しても更新されない（#6・#31）。期限切れの後に同じ wallet で登録し直すと `403 devnet_enrollment_expired` になった、という報告がある（#85） | 更新の手順は公開されていない（#6・#85 で頼んでいる人がいるが返事はない）。wallet を作り直して取り直そうとしない |
 
 ### CLI（wallet・その他）
 
@@ -84,8 +91,9 @@
 ### 流す前に読む（エラーではないが、取り返しがつきにくいもの）
 - `flop chat`・`flop proxy`・`flop session run`：失敗した推論の試みが channel を開いて FLOP を escrow した、という報告がある（#40）。報告の例では、あとで `computeChannel.timeout` の呼び出しで全額戻った（#40 のコメント）が、戻すための CLI のコマンドはなく、escrow は `flop balance` にも出ない。到達できない miner だと何も出ずに rc=0 で終わった、という報告もある（#39、1 人）。
 - `wallet agent create` の繰り返し：上の CLI の表（#17・#45・#48）。
-- `agent credential` の付与先は `~/.flop/devnet-enroll-wallet.json` の鍵のアドレス。ファイルを開いて中身を人に見せない。
+- `agent credential` の付与先は `~/.flop/devnet-enroll-wallet.json` の鍵のアドレス。ファイルは開かない・中身を人に見せない（上の「秘密のファイル」）。
 
 ## この表の作り方
 - エラーの文は Issue の本文とコメントの原文から写した。
-- 「11/05 00:27Z の時点」の状態は、その時刻の取得による。
+- 「2026-11-06 15:41Z の時点」の状態は、その時刻の取得による。
+- 鍵ファイルの形と行番号は、npm の `@flop-labs/cli@0.4.0` の `dist/cli.js` を読んで書いた（ソースのコードは動かしていない）。
