@@ -1,15 +1,17 @@
 # FLOP Devnet を CLI で試した記録（非公式・日本語）
 
 > - **非公式のメモ。** FLOP Labs の公式ではない。VNL Works の非公式のメモで、筆者＝VNL Works（GitHub は vanilla3）。
-> - **最終確認 2026-11-06 15:41Z**（flop-labs/network の Issue を取得した時刻）。直った・直っていないなどの状態は、この時点のもの。
+> - **最終確認 2026-11-16 12:19Z**（flop-labs/network の Issue を取得した時刻）。直った・直っていないなどの状態は、この時点のもの。
 > - 最終確認から 7 日以上たっていたら、状態の行は古いとみなし、公式 docs と flop-labs/network を見てほしい。
+> - **このメモは CLI 0.4.0 で試した記録。今の Devnet には 0.4.0 はつながらない、という参加者の報告がある**（#132。0.4.0 は 11/07 に spec 1014014 で接続を拒み、Devnet の runtime が 11/12 に spec 1014020 に上がった後は 0.4.4 も拒み、0.5.0 では動いた、という報告）。くわしくは下の「環境」。
 > - 公式かどうかの確かめ先：https://docs.flop.network/docs/official-links
 > - 正本は公式 docs（docs.flop.network、英語）。このメモは遅れることがある（network#2 のコメントの指摘）。
-> - docs の testnet-and-timeline（Last updated 2026-10-30、写しの取得は 2026-11-04）の FAQ は「agent は Devnet を使えない」と書いているが、同じページの別の箇所や CLI は使える前提で書かれている。食い違っている（network#52、筆者が出した Issue）。
+> - docs の testnet-and-timeline（Last updated 2026-10-30、写しの取得は 2026-11-04）の FAQ は、（11/04 の写しでは）「agent は Devnet を使えない」と書いていた。同じページの別の箇所や CLI は使える前提で書かれていて、食い違っていた（network#52、筆者が出した Issue）。
+> - 参加者の報告（#187、11/10 に読んだもの）では、FAQ サイトの testnet-and-timeline は Testnet の目標を 11 月 3 日と書き、network-testnet のページは `Status: planned.` で、食い違っていた。その後ページが変わったかは、筆者は確かめていない。筆者が 11/04 に写した docs.flop.network の testnet-and-timeline にも 11 月 3 日があり、networks/testnet は planned だった。それより後には読んでいない。
 > - Devnet は報酬も airdrop の重みもなく、使い捨てで何も引き継がない（official-links、Last updated 2026-10-23。testnet-and-timeline、Last updated 2026-10-30。どちらも写しの取得は 2026-11-04）。
 > - 同じ testnet-and-timeline の FAQ（https://docs.flop.network/docs/testnet-and-timeline 、Last updated 2026-10-30、写しの取得は 2026-11-04）には「Creating DIDs earns nothing; posting your DID in a TechnoCore room earns nothing.」とある。詳しくは公式 FAQ を。
 > - FLOP は claim・mint・登録のためにシードフレーズや入金を求めない（official-links（Last updated 2026-10-23、写しの取得は 2026-11-04）の「FLOP never asks for a seed phrase or a deposit to claim, mint or register anything.」）。
-> - 関係の表示：筆者は FLOP の KOL プログラムに応募している。報酬は受けていない（2026-11-05 時点）。
+> - 関係の表示：筆者は FLOP の KOL プログラムに応募している。報酬は受けていない（2026-11-16 時点）。
 > - AI の関与：AI（Claude）が下書きし、別の文脈の AI がレビューした。
 > - ライセンス：筆者の文は CC BY 4.0（`LICENSE`）。引用した英語のエラー文や docs の文には及ばない。
 > - つまずきの早見表は [TROUBLE.md](TROUBLE.md)。
@@ -38,6 +40,16 @@
 - Windows。Node.js v24.22.1（`node --version`、2026-11-04 に確認）。sdk-references（Last updated 2026-10-30、写しの取得は 2026-11-04）は Node.js 22 以上を求めている。
 - CLI はグローバルに入れず、版を固定して `npx` で動かした：`npx --yes --package @flop-labs/cli@0.4.0 flop …`。下の `… flop` はこの形の略。
 - 2026-11-06 に npm の registry を読み、`@flop-labs/cli` の latest は 0.4.0 のまま（0.4.0 は 2026-10-29 公開）だった。
+- その後、0.4.0 は今の Devnet につながらない、という参加者の報告がある（#132）。
+  - Devnet の runtime が spec 1014014 に上がった後（#132 は 11/07 に出された）、`@flop-labs/cli` 0.4.0 は `Unsupported runtime spec version` で接続を拒む。
+  - 0.4.1（11/08 公開と報告）は 1014014 に対応した（#132 の 11/09 のコメント）。
+  - その後、Devnet は 11/12 に spec 1014020 に上がった（#132 の 11/13 のコメント）。0.4.4 も拒み、0.5.0 では `balance`・`health`・`model list`・`network status` が動いた、という報告がある（#132 の 11/13・11/15 のコメント）。
+- network の `releases/cli/v0.5.0.md`（11/12 の commit、https://github.com/flop-labs/network/blob/main/releases/cli/v0.5.0.md ）には「every `flop` command connects to runtimes `1014015` through `1014020`」とある。
+- 筆者が試したのは 0.4.0（11/04〜11/06）だけ。0.4.1 以降の版は試していない。
+- このメモの `npx --yes --package @flop-labs/cli@0.4.0 …` の形のまま今流すと、chain につなぐコマンド（報告では `health`・`balance`）は接続の段で止まると読める（推論、#132 の報告から）。
+- `agent credential` は 0.4.0 でも gateway の登録の段まで届いた報告がある（#200 の 11/10）。CLI 0.4.0 で登録の段まで届いた報告は 11/15 にもある（#202 の 2026-11-15T02:50:47Z のコメント。コマンド名は書かれていない）。
+- 保守担当者は、#4・#5・#12 を閉じたコメント（11/11。runtime が 1014020 に上がった 11/12 より前）で、0.4.0 のままのものは上げるよう書き、docs の古い版の案内は #132 で追う、と書いた。
+- 版は公式の docs と network のリリースノートで確かめる。docs の版の表示が遅れているという報告もある（#132 の 11/13・11/15 のコメント）。
 
 ### 段 2〜3：版・help・Devnet への接続（2026-11-04）
 
@@ -80,6 +92,7 @@
 - 管理者の PowerShell で `w32tm /resync /force`：コマンドは正しく完了した。
 - 直後の stripchart（01:20:08〜01:20:16Z）：5 回とも `+00.1906〜+00.1963s`。約 0.19 秒の遅れは縮まらなかった。
 - そのあと 6 回目を流したが、同じエラーの文だった。
+- その後も、CLI 0.4.2（#34 の 2026-11-11T03:04Z のコメント、観測は 11/10 JST と書かれている）と CLI 0.5.0（#241、2026-11-12T07:29Z、時計は NTP に合わせた後と書いている）で同じ文になった、という参加者の報告がある。CLI のこの確かめ（#34）が直ったという報告はない（2026-11-16 12:19Z の時点）。
 
 読み方（どれも推論）：
 
@@ -101,7 +114,7 @@
 
 - 段 4（鍵）と段 5（faucet）：`flop keys --help`・`flop keys generate --help`・`flop faucet --help` を見ただけ。`keys generate` は流していない（鍵ファイル `~/.flop/devnet-enroll-wallet.json` は `agent credential` が作った）。`faucet request` は流していない。ただし `agent credential` の中で faucet への請求は起きていて、その結果は上の 6 回の表のとおり。
 - 段 8（推論、`/v1/chat/completions`）：試していない。
-- この先のつまずきは、参加者の報告では、faucet の Grant pending や 1 日の上限、gateway の登録の上限、推論の `429`（channel pool is full）、allowance の約 24 時間の期限などがある。TROUBLE.md の faucet・credential・推論の表へ。
+- この先のつまずきは、参加者の報告では、faucet の Grant pending や 1 日の上限、gateway の登録の上限、推論の `429`（channel pool is full）、allowance の約 24 時間の期限などがある。allowance が 15 時間ほどで切れたという報告も 1 件ある（#6 の 2026-11-15T07:35:20Z のコメント）。約 24 時間で切れた例もある（#237）。TROUBLE.md の faucet・credential・推論の表へ。
 
 ## 秘密のファイル
 
